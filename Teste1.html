@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>FORMULÁRIO UNIFICADO DE ATENDIMENTO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* =================== TEMA CÍTRICO (padrão) =================== */
+    :root{
+      --bg:#fcfffb;        /* fundo cítrico claro */
+      --ink:#101828;       /* texto principal */
+      --muted:#667085;     /* texto secundário */
+      --line:#e6f3e6;      /* linhas/sutilezas */
+      --card:#f6fff2;      /* cartões/blocos */
+      --brand:#0e7490;     /* teal (barra/ações) */
+      --accent:#65a30d;    /* lima (gradiente/acento) */
+      --brand-ink:#ffffff; /* texto sobre brand */
+      --radius:14px; --gap:16px;
+    }
+
+    /* =================== TEMA CÍTRICO DARK =================== */
+    body[data-theme="citric-dark"]{
+      --bg:#0b1511;
+      --ink:#e6f6e9;
+      --muted:#a1b5a7;
+      --line:#1c2a21;
+      --card:#0f1c16;
+      --brand:#0e7490;
+      --accent:#65a30d;
+      --brand-ink:#eaffea;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin:0;
+      font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink); background:var(--bg);
+      transition: background .25s ease, color .25s ease;
+    }
+    .app-container { max-width:1200px; margin:24px auto; padding:0 16px 40px; }
+    .app-header { margin-bottom:16px; }
+
+    /* Logo +20% */
+    .brand-logo { display:block; height:66px; margin:0 auto 6px; }
+    @media (max-width:420px){ .brand-logo{ height:53px; } }
+
+    .app-title {
+      margin:0 0 8px; font-size:20px; font-weight:700; letter-spacing:.2px;
+      text-align:center; color:var(--brand);
+    }
+
+    /* ====== Botão de tema (apenas emoji) ====== */
+    .btn-theme{
+      border:1px solid var(--line); background:#fff0; color:var(--ink);
+      padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:700; font-size:16px;
+      width:38px; height:32px; display:flex; align-items:center; justify-content:center; line-height:1;
+    }
+
+    /* ====== MENU EM FAIXA (gradiente Cítrico) ====== */
+    .tablist{
+      display:flex; gap:6px; padding:10px; border-radius:12px;
+      background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 100%);
+      justify-content:center; flex-wrap:wrap;
+    }
+    .tab-button{
+      border:1px solid rgba(255,255,255,.28);
+      background:transparent; padding:5px 9px; border-radius:999px;
+      cursor:pointer; font-weight:700; font-size:11px; line-height:1;
+      color:rgba(255,255,255,.9);
+    }
+    .tab-button:hover{ background:rgba(255,255,255,.08); }
+    .tab-button[aria-selected="true"]{ background:#fff; color:var(--brand); border-color:#fff; }
+
+    .columns { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; }
+    @media (max-width:920px){ .columns { grid-template-columns:1fr; } }
+
+    .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+    .card-title { margin:0 0 12px; font-size:16px; font-weight:700; }
+    .subtle { color:var(--muted); font-weight:500; }
+    .card-title .subtle { display:none; } /* Ocultar “• Entradas / • Saída” */
+
+    .btn { border:1px solid var(--line); background:#fff0; padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:600; color:var(--ink); }
+    .btn:disabled { opacity:.6; cursor:not-allowed; }
+
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); }
+    .form-grid.full { grid-template-columns:1fr; }
+    .form-grid.two-uneven { grid-template-columns:1fr 2fr; } /* cidade menor + nome maior */
+
+    .form-field { display:flex; flex-direction:column; gap:6px; position:relative; }
+    .form-label { font-size:12px; color:var(--muted); letter-spacing:.2px; }
+    .form-input {
+      height:38px; padding:8px 10px; border:1px solid var(--line); border-radius:10px;
+      background:#ffffff; color:var(--ink); outline:none;
+    }
+    body[data-theme="citric-dark"] .form-input { background:#0b1712; }
+
+    .form-input:focus { border-color:#94d19a; box-shadow:0 0 0 3px rgba(101,163,13,.22); }
+
+    /* Botão mini “Copiar” acoplado ao campo */
+    .copy-chip{
+      position:absolute; right:6px; top:26px; height:22px; padding:0 8px;
+      border:1px solid var(--line); border-radius:999px; background:#fff0; color:var(--ink);
+      font-size:11px; cursor:pointer; font-weight:700;
+    }
+
+    .choice-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .choice input { margin-right:6px; }
+    .error-hint { margin-top:6px; font-size:12px; color:#b91c1c; }
+    .form-field.invalid .form-label { color:#b91c1c; }
+
+    .output-block { position:relative; margin-bottom:16px; }
+    .output-surface {
+      border:1px solid var(--line); background:#ffffff; border-radius:12px; padding:12px; min-height:96px; white-space:pre-line; color:var(--ink);
+    }
+    body[data-theme="citric-dark"] .output-surface { background:#0b1712; }
+
+    .action-row { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+
+    /* Botão “limpar” por serviço (menor + rótulo) */
+    .clear-row { display:flex; justify-content:flex-end; margin-top:8px; }
+    .clear-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:14px; line-height:1; background:#fff0; border:1px solid var(--line);
+      border-radius:999px; padding:2px 8px; cursor:pointer; font-weight:700; color:var(--ink);
+    }
+    .clear-btn .clear-text{ font-size:10px; color:var(--muted); text-transform:lowercase; letter-spacing:.2px; }
+
+    .mask-title { display:none; }
+    .service-panel { display:none; }
+    .service-panel[aria-hidden="false"] { display:block; }
+
+    /* Débitos dinâmicos (menu INFORMAÇÃO DÉBITO) */
+    .deb-list { display:block; }
+    .deb-row { display:grid; grid-template-columns:1fr 1fr auto; gap:var(--gap); align-items:end; margin-bottom:var(--gap); }
+    .deb-remove { padding:8px 12px; border:1px solid var(--line); border-radius:999px; background:#fff0; color:var(--ink); cursor:pointer; }
+
+    /* Rodapé — faixa com gradiente cítrico, centralizado, -30% */
+    .app-footer{
+      margin-top:24px; padding:14px 16px;
+      background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 100%);
+      color:var(--brand-ink);
+      display:flex; flex-direction:column; align-items:center; gap:4px;
+      text-align:center; font-size:70%;
+      position:relative; /* para posicionar o botão no canto */
+    }
+    .app-footer strong{ color:#fff; }
+
+    /* Botão de tema no rodapé (canto inferior direito) */
+    .app-footer .btn-theme{
+      position:absolute; right:16px; bottom:10px;
+      border-color:rgba(255,255,255,.55); color:#fff; background:rgba(255,255,255,.08);
+    }
+    .app-footer .btn-theme:hover{ background:rgba(255,255,255,.18); }
+    
+    /* ===== Esconder todos os blocos de saída da MÁSCARA 1 ===== */
+    .output-block.mask1-block{ display:none; }
+  </style>
+</head>
+<body>
+  <main class="app-container" id="app-root">
+    <header class="app-header">
+      <img
+        class="brand-logo"
+        src="https://media.licdn.com/dms/image/v2/D560BAQFyo9Y2O3K60A/company-logo_200_200/company-logo_200_200/0/1721417510586/grupo_imagetech_logo?e=2147483647&v=beta&t=wVSdTADzHWWhfe1GHIQkjW7bKgo5ricBDDoaoU7JQJM"
+        alt="Grupo Imagetech - Logomarca"
+        referrerpolicy="no-referrer"
+        onerror="this.style.display='none'"
+      />
+      <h1 class="app-title">FORMULÁRIO UNIFICADO DE ATENDIMENTO</h1>
+
+      <!-- MENUS (ordenados A→Z em runtime) -->
+      <nav class="tablist" role="tablist" aria-label="Serviços disponíveis" id="tablist">
+        <button class="tab-button" role="tab" aria-selected="true" aria-controls="panel-informacao-debito" id="tab-informacao-debito">INFORMAÇÃO DÉBITO</button>
+        <button class="tab-button" role="tab" aria-selected="false" aria-controls="panel-prioridade" id="tab-prioridade">PRIORIDADE</button>
+        <button class="tab-button" role="tab" aria-selected="false" aria-controls="panel-religacao-baixado" id="tab-religacao-baixado">RELIGAÇÃO PAGAMENTO BAIXADO</button>
+        <button class="tab-button" role="tab" aria-selected="false" aria-controls="panel-religacao-informado" id="tab-religacao-informado">RELIGAÇÃO PAGAMENTO INFORMADO</button>
+        <button class="tab-button" role="tab" aria-selected="false" aria-controls="panel-troca" id="tab-troca">TROCA DE TITULARIDADE</button>
+      </nav>
+    </header>
+
+    <!-- ========== INFORMAÇÃO DÉBITO ========== -->
+    <section class="service-panel" id="panel-informacao-debito" role="tabpanel" aria-labelledby="tab-informacao-debito" aria-hidden="false">
+      <div class="columns">
+        <div class="card" id="form-informacao-debito">
+          <h2 class="card-title">INFORMAÇÃO DÉBITO <span class="subtle">• Entradas</span></h2>
+
+          <!-- Entradas -->
+          <section class="card">
+            <div class="form-grid full">
+              <div class="form-field">
+                <label class="form-label" for="inf-m1-matricula">MATRÍCULA</label>
+                <input class="form-input" id="inf-m1-matricula" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="inf-m1-matricula" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <!-- Cidade (menor) + Nome (maior) -->
+            <div class="form-grid two-uneven">
+              <div class="form-field">
+                <label class="form-label" for="inf-m1-cidade">CIDADE DE ATENDIMENTO</label>
+                <input class="form-input" id="inf-m1-cidade" type="text" autocomplete="off" />
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="inf-m1-nome">NOME DO CLIENTE</label>
+                <input class="form-input" id="inf-m1-nome" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="inf-m1-nome" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field">
+                <label class="form-label" for="inf-m1-cpf">CPF</label>
+                <input class="form-input" id="inf-m1-cpf" type="text" inputmode="numeric" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="inf-m1-cpf" title="Copiar">Copiar</button>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="inf-m1-telefone">TELEFONE DE CONTATO</label>
+                <input class="form-input" id="inf-m1-telefone" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="inf-m1-telefone" title="Copiar">Copiar</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Ticket + Débitos dinâmicos -->
+          <section class="card">
+            <div class="form-grid full">
+              <div class="form-field">
+                <label class="form-label" for="inf-m2-ticket">TICKET</label>
+                <input class="form-input" id="inf-m2-ticket" type="text" autocomplete="off" />
+              </div>
+              <div id="deb-m2-list" class="deb-list" aria-live="polite"></div>
+              <div class="action-row" style="justify-content:flex-start;">
+                <button class="btn" id="deb-add-row" type="button" title="Adicionar débito">➕ Adicionar débito</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="card" id="output-informacao-debito">
+          <h2 class="card-title">INFORMAÇÃO DÉBITO <span class="subtle">• Saída</span></h2>
+          <!-- BLOCO M1 (OCULTO) -->
+          <section class="output-block mask1-block" aria-hidden="true">
+            <div class="output-surface" id="inf-m1-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="inf-m1-output">Copiar</button></div>
+          </section>
+          <!-- BLOCO M2 -->
+          <section class="output-block">
+            <div class="output-surface" id="inf-m2-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="inf-m2-output">Copiar</button></div>
+          </section>
+          <div class="clear-row">
+            <button class="clear-btn" type="button" title="Limpar este serviço" aria-label="Limpar dados do serviço" data-clear-key="informacaoDebito">🧽 <span class="clear-text">limpar</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PRIORIDADE ========== -->
+    <section class="service-panel" id="panel-prioridade" role="tabpanel" aria-labelledby="tab-prioridade" aria-hidden="true">
+      <div class="columns">
+        <div class="card" id="form-prioridade">
+          <h2 class="card-title">PRIORIDADE <span class="subtle">• Entradas</span></h2>
+
+        <section class="card">
+          <div class="form-grid">
+            <div class="form-field"><label class="form-label" for="pri-m1-os">OS</label><input class="form-input" id="pri-m1-os" type="text" autocomplete="off" /></div>
+            <div class="form-field"><label class="form-label" for="pri-m1-endereco">ENDEREÇO</label><input class="form-input" id="pri-m1-endereco" type="text" autocomplete="off" /></div>
+            <div class="form-field"><label class="form-label" for="pri-m1-complemento">COMPLEMENTO</label><input class="form-input" id="pri-m1-complemento" type="text" autocomplete="off" /></div>
+            <div class="form-field"><label class="form-label" for="pri-m1-localidade">LOCALIDADE</label><input class="form-input" id="pri-m1-localidade" type="text" autocomplete="off" /></div>
+            <div class="form-field"><label class="form-label" for="pri-m1-ponto">PONTO REF</label><input class="form-input" id="pri-m1-ponto" type="text" autocomplete="off" /></div>
+            <div class="form-field"><label class="form-label" for="pri-m1-bairro">BAIRRO</label><input class="form-input" id="pri-m1-bairro" type="text" autocomplete="off" /></div>
+            <div class="form-field"><label class="form-label" for="pri-m1-solicitante">SOLICITANTE</label><input class="form-input" id="pri-m1-solicitante" type="text" autocomplete="off" /></div>
+            <div class="form-field"><label class="form-label" for="pri-m1-telefone">TELEFONE</label><input class="form-input" id="pri-m1-telefone" type="text" autocomplete="off" /></div>
+          </div>
+        </section>
+        </div>
+
+        <div class="card" id="output-prioridade">
+          <h2 class="card-title">PRIORIDADE <span class="subtle">• Saída</span></h2>
+          <!-- BLOCO M1 (OCULTO) -->
+          <section class="output-block mask1-block" aria-hidden="true">
+            <div class="output-surface" id="pri-m1-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="pri-m1-output">Copiar</button></div>
+          </section>
+          <!-- BLOCO M2 -->
+          <section class="output-block">
+            <div class="output-surface" id="pri-m2-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="pri-m2-output">Copiar</button></div>
+          </section>
+          <div class="clear-row">
+            <button class="clear-btn" type="button" title="Limpar este serviço" aria-label="Limpar dados do serviço" data-clear-key="prioridade">🧽 <span class="clear-text">limpar</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== RELIGAÇÃO PAGAMENTO BAIXADO ========== -->
+    <section class="service-panel" id="panel-religacao-baixado" role="tabpanel" aria-labelledby="tab-religacao-baixado" aria-hidden="true">
+      <div class="columns">
+        <div class="card" id="form-religacao-baixado">
+          <h2 class="card-title">RELIGAÇÃO PAGAMENTO BAIXADO <span class="subtle">• Entradas</span></h2>
+
+          <section class="card">
+            <div class="form-grid full">
+              <div class="form-field"><label class="form-label" for="rb-m1-matricula">MATRÍCULA</label>
+                <input class="form-input" id="rb-m1-matricula" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="rb-m1-matricula" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <div class="form-grid two-uneven">
+              <div class="form-field"><label class="form-label" for="rb-m1-cidade">CIDADE DE ATENDIMENTO</label><input class="form-input" id="rb-m1-cidade" type="text" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="rb-m1-nome">NOME DO CLIENTE</label>
+                <input class="form-input" id="rb-m1-nome" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="rb-m1-nome" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field"><label class="form-label" for="rb-m1-cpf">CPF</label>
+                <input class="form-input" id="rb-m1-cpf" type="text" inputmode="numeric" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="rb-m1-cpf" title="Copiar">Copiar</button>
+              </div>
+              <div class="form-field"><label class="form-label" for="rb-m1-telefone">TELEFONE DE CONTATO</label>
+                <input class="form-input" id="rb-m1-telefone" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="rb-m1-telefone" title="Copiar">Copiar</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="form-grid">
+              <div class="form-field"><label class="form-label" for="rb-m2-referencia">REFERÊNCIA DO CORTE <span class="subtle">(MM/AAAA)</span></label><input class="form-input" id="rb-m2-referencia" type="text" inputmode="numeric" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="rb-m2-valor">VALOR PAGO</label><input class="form-input" id="rb-m2-valor" type="text" inputmode="numeric" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="rb-m2-data">DATA DA BAIXA <span class="subtle">(DD/MM/AAAA)</span></label><input class="form-input" id="rb-m2-data" type="date" /></div>
+              <div class="form-field"><label class="form-label" for="rb-m2-banco">BANCO DO PAGAMENTO</label><input class="form-input" id="rb-m2-banco" type="text" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="rb-m2-ticket">TICKET</label><input class="form-input" id="rb-m2-ticket" type="text" autocomplete="off" /></div>
+              <div class="form-field" role="group" aria-labelledby="rb-m2-cavalete-label" id="rb-m2-cavalete-field">
+                <span class="form-label" id="rb-m2-cavalete-label">CAVALETE DE FÁCIL ACESSO</span>
+                <div class="choice-row">
+                  <label class="choice"><input type="radio" name="rb-m2-cavalete" id="rb-m2-cavalete-sim" value="SIM"> SIM</label>
+                  <label class="choice"><input type="radio" name="rb-m2-cavalete" id="rb-m2-cavalete-nao" value="NÃO"> NÃO</label>
+                </div>
+                <div class="error-hint" id="rb-m2-cavalete-error" hidden>Selecione <b>SIM</b> ou <b>NÃO</b> para continuar.</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="card" id="output-religacao-baixado">
+          <h2 class="card-title">RELIGAÇÃO PAGAMENTO BAIXADO <span class="subtle">• Saída</span></h2>
+          <!-- BLOCO M1 (OCULTO) -->
+          <section class="output-block mask1-block" aria-hidden="true">
+            <div class="output-surface" id="rb-m1-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="rb-m1-output">Copiar</button></div>
+          </section>
+          <!-- BLOCO M2 -->
+          <section class="output-block">
+            <div class="output-surface" id="rb-m2-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="rb-m2-output">Copiar</button></div>
+          </section>
+          <div class="clear-row">
+            <button class="clear-btn" type="button" title="Limpar este serviço" aria-label="Limpar dados do serviço" data-clear-key="religacaoBaixado">🧽 <span class="clear-text">limpar</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== RELIGAÇÃO PAGAMENTO INFORMADO ========== -->
+    <section class="service-panel" id="panel-religacao-informado" role="tabpanel" aria-labelledby="tab-religacao-informado" aria-hidden="true">
+      <div class="columns">
+        <div class="card" id="form-religacao-informado">
+          <h2 class="card-title">RELIGAÇÃO PAGAMENTO INFORMADO <span class="subtle">• Entradas</span></h2>
+
+          <section class="card">
+            <div class="form-grid full">
+              <div class="form-field"><label class="form-label" for="ri-m1-matricula">MATRÍCULA</label>
+                <input class="form-input" id="ri-m1-matricula" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="ri-m1-matricula" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <div class="form-grid two-uneven">
+              <div class="form-field"><label class="form-label" for="ri-m1-cidade">CIDADE DE ATENDIMENTO</label><input class="form-input" id="ri-m1-cidade" type="text" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="ri-m1-nome">NOME DO CLIENTE</label>
+                <input class="form-input" id="ri-m1-nome" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="ri-m1-nome" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field"><label class="form-label" for="ri-m1-cpf">CPF</label>
+                <input class="form-input" id="ri-m1-cpf" type="text" inputmode="numeric" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="ri-m1-cpf" title="Copiar">Copiar</button>
+              </div>
+              <div class="form-field"><label class="form-label" for="ri-m1-telefone">TELEFONE DE CONTATO</label>
+                <input class="form-input" id="ri-m1-telefone" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="ri-m1-telefone" title="Copiar">Copiar</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="form-grid">
+              <div class="form-field"><label class="form-label" for="ri-m2-referencia">REFERÊNCIA DO CORTE <span class="subtle">(MM/AAAA)</span></label><input class="form-input" id="ri-m2-referencia" type="text" inputmode="numeric" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="ri-m2-valor">VALOR PAGO</label><input class="form-input" id="ri-m2-valor" type="text" inputmode="numeric" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="ri-m2-data">DATA DO PAGAMENTO <span class="subtle">(DD/MM/AAAA)</span></label><input class="form-input" id="ri-m2-data" type="date" /></div>
+              <div class="form-field"><label class="form-label" for="ri-m2-banco">BANCO DO PAGAMENTO</label><input class="form-input" id="ri-m2-banco" type="text" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="ri-m2-ticket">TICKET</label><input class="form-input" id="ri-m2-ticket" type="text" autocomplete="off" /></div>
+              <div class="form-field" role="group" aria-labelledby="ri-m2-cavalete-label" id="ri-m2-cavalete-field">
+                <span class="form-label" id="ri-m2-cavalete-label">CAVALETE DE FÁCIL ACESSO</span>
+                <div class="choice-row">
+                  <label class="choice"><input type="radio" name="ri-m2-cavalete" id="ri-m2-cavalete-sim" value="SIM"> SIM</label>
+                  <label class="choice"><input type="radio" name="ri-m2-cavalete" id="ri-m2-cavalete-nao" value="NÃO"> NÃO</label>
+                </div>
+                <div class="error-hint" id="ri-m2-cavalete-error" hidden>Selecione <b>SIM</b> ou <b>NÃO</b> para continuar.</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="card" id="output-religacao-informado">
+          <h2 class="card-title">RELIGAÇÃO PAGAMENTO INFORMADO <span class="subtle">• Saída</span></h2>
+          <!-- BLOCO M1 (OCULTO) -->
+          <section class="output-block mask1-block" aria-hidden="true">
+            <div class="output-surface" id="ri-m1-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="ri-m1-output">Copiar</button></div>
+          </section>
+          <!-- BLOCO M2 -->
+          <section class="output-block">
+            <div class="output-surface" id="ri-m2-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="ri-m2-output">Copiar</button></div>
+          </section>
+          <div class="clear-row">
+            <button class="clear-btn" type="button" title="Limpar este serviço" aria-label="Limpar dados do serviço" data-clear-key="religacaoInformado">🧽 <span class="clear-text">limpar</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== TROCA DE TITULARIDADE ========== -->
+    <section class="service-panel" id="panel-troca" role="tabpanel" aria-labelledby="tab-troca" aria-hidden="true">
+      <div class="columns">
+        <div class="card" id="form-troca">
+          <h2 class="card-title">TROCA DE TITULARIDADE <span class="subtle">• Entradas</span></h2>
+
+          <section class="card">
+            <div class="form-grid full">
+              <div class="form-field"><label class="form-label" for="tro-m1-matricula">MATRÍCULA</label>
+                <input class="form-input" id="tro-m1-matricula" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="tro-m1-matricula" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <div class="form-grid two-uneven">
+              <div class="form-field"><label class="form-label" for="tro-m1-cidade">CIDADE DE ATENDIMENTO</label><input class="form-input" id="tro-m1-cidade" type="text" autocomplete="off" /></div>
+              <div class="form-field"><label class="form-label" for="tro-m1-nome">NOME DO CLIENTE</label>
+                <input class="form-input" id="tro-m1-nome" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="tro-m1-nome" title="Copiar">Copiar</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field"><label class="form-label" for="tro-m1-cpf">CPF</label>
+                <input class="form-input" id="tro-m1-cpf" type="text" inputmode="numeric" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="tro-m1-cpf" title="Copiar">Copiar</button>
+              </div>
+              <div class="form-field"><label class="form-label" for="tro-m1-telefone">TELEFONE DE CONTATO</label>
+                <input class="form-input" id="tro-m1-telefone" type="text" autocomplete="off" />
+                <button class="copy-chip" type="button" data-copy-input="tro-m1-telefone" title="Copiar">Copiar</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Máscara 2 (apenas ticket) -->
+          <section class="card">
+            <div class="form-grid full">
+              <div class="form-field"><label class="form-label" for="tro-m2-ticket">TICKET</label><input class="form-input" id="tro-m2-ticket" type="text" autocomplete="off" /></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="card" id="output-troca">
+          <h2 class="card-title">TROCA DE TITULARIDADE <span class="subtle">• Saída</span></h2>
+          <!-- BLOCO M1 (OCULTO) -->
+          <section class="output-block mask1-block" aria-hidden="true">
+            <div class="output-surface" id="tro-m1-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="tro-m1-output">Copiar</button></div>
+          </section>
+          <!-- BLOCO M2 -->
+          <section class="output-block">
+            <div class="output-surface" id="tro-m2-output" aria-live="polite" aria-atomic="true"></div>
+            <div class="action-row"><button class="btn" data-copy-target="tro-m2-output">Copiar</button></div>
+          </section>
+          <div class="clear-row">
+            <button class="clear-btn" type="button" title="Limpar este serviço" aria-label="Limpar dados do serviço" data-clear-key="troca">🧽 <span class="clear-text">limpar</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="app-footer" role="contentinfo">
+    <div>© <span id="footer-year"></span> <strong>Grupo Imagetech</strong>. Todos os direitos reservados.</div>
+    <div><strong id="footer-version"></strong> • Atualizado em <span id="footer-updated"></span> • Atualizado por <strong>resantos</strong></div>
+
+    <!-- Botão de Tema no rodapé (canto inferior direito) -->
+    <button
+      id="toggle-theme"
+      class="btn-theme"
+      type="button"
+      aria-pressed="false"
+      aria-label="Ativar tema escuro (Cítrico Dark)"
+      title="Alternar tema"
+    >🌙</button>
+  </footer>
+
+  <script>
+    /* === Tema (toggle Claro/Dark) — botão só emoji === */
+    function applyTheme(theme){
+      const btn=document.getElementById('toggle-theme');
+      if(theme==='citric-dark'){
+        document.body.setAttribute('data-theme','citric-dark');
+        btn.textContent='☀️';
+        btn.setAttribute('aria-pressed','true');
+        btn.setAttribute('aria-label','Ativar tema claro (Cítrico Claro)');
+      }else{
+        document.body.removeAttribute('data-theme');
+        btn.textContent='🌙';
+        btn.setAttribute('aria-pressed','false');
+        btn.setAttribute('aria-label','Ativar tema escuro (Cítrico Dark)');
+      }
+      try{ localStorage.setItem('ui.theme.citric', theme); }catch{}
+    }
+    (function initTheme(){
+      let saved='citric';
+      try{ saved = localStorage.getItem('ui.theme.citric') || 'citric'; }catch{}
+      applyTheme(saved);
+      document.getElementById('toggle-theme').addEventListener('click', ()=>{
+        const next = document.body.getAttribute('data-theme')==='citric-dark' ? 'citric' : 'citric-dark';
+        applyTheme(next);
+      });
+    })();
+
+    /* === Máscaras === */
+    function maskCPF(v){ const d=v.replace(/\D/g,'').slice(0,11); const p=[]; if(d.length>0)p.push(d.slice(0,3)); if(d.length>3)p.push(d.slice(3,6)); if(d.length>6)p.push(d.slice(6,9)); let m=''; if(p.length>=1)m=p[0]; if(p.length>=2)m=p[0]+'.'+p[1]; if(p.length>=3)m=p[0]+'.'+p[1]+'.'+p[2]; if(d.length>9)m+='-'+d.slice(9,11); return m; }
+    function maskMonthYear(v){ const d=v.replace(/\D/g,'').slice(0,6); if(d.length<=2) return d; return d.slice(0,2)+'/'+d.slice(2); }
+    function maskBRL(v){ let d=v.replace(/\D/g,''); if(d.length===0) return ''; if(d.length<=2){ const c=d.padStart(2,'0'); return 'R$'+'0'+','+c; } let w=d.slice(0,-2).replace(/^0+(?=\d)/,''); const c=d.slice(-2); w=w.replace(/\B(?=(\d{3})+(?!\d))/g,'.'); return 'R$'+w+','+c; }
+    function pad(v){ return v && v.trim() ? v.trim() : '____'; }
+
+    /* === Mapa M1 (mantido para futura reativação) === */
+    const m1Map={
+      informacaoDebito:[
+        {label:'MATRÍCULA',id:'inf-m1-matricula'},
+        {label:'CIDADE DE ATENDIMENTO',id:'inf-m1-cidade'},
+        {label:'NOME DO CLIENTE',id:'inf-m1-nome'},
+        {label:'CPF',id:'inf-m1-cpf'},
+        {label:'TELEFONE DE CONTATO',id:'inf-m1-telefone'}
+      ],
+      prioridade:[
+        {label:'OS',id:'pri-m1-os'},
+        {label:'ENDEREÇO',id:'pri-m1-endereco'},
+        {label:'COMPLEMENTO',id:'pri-m1-complemento'},
+        {label:'LOCALIDADE',id:'pri-m1-localidade'},
+        {label:'PONTO REF',id:'pri-m1-ponto'},
+        {label:'BAIRRO',id:'pri-m1-bairro'},
+        {label:'SOLICITANTE',id:'pri-m1-solicitante'},
+        {label:'TELEFONE',id:'pri-m1-telefone'}
+      ],
+      religacaoBaixado:[
+        {label:'MATRÍCULA',id:'rb-m1-matricula'},
+        {label:'CIDADE DE ATENDIMENTO',id:'rb-m1-cidade'},
+        {label:'NOME DO CLIENTE',id:'rb-m1-nome'},
+        {label:'CPF',id:'rb-m1-cpf'},
+        {label:'TELEFONE DE CONTATO',id:'rb-m1-telefone'}
+      ],
+      religacaoInformado:[
+        {label:'MATRÍCULA',id:'ri-m1-matricula'},
+        {label:'CIDADE DE ATENDIMENTO',id:'ri-m1-cidade'},
+        {label:'NOME DO CLIENTE',id:'ri-m1-nome'},
+        {label:'CPF',id:'ri-m1-cpf'},
+        {label:'TELEFONE DE CONTATO',id:'ri-m1-telefone'}
+      ],
+      troca:[
+        {label:'MATRÍCULA',id:'tro-m1-matricula'},
+        {label:'CIDADE DE ATENDIMENTO',id:'tro-m1-cidade'},
+        {label:'NOME DO CLIENTE',id:'tro-m1-nome'},
+        {label:'CPF',id:'tro-m1-cpf'},
+        {label:'TELEFONE DE CONTATO',id:'tro-m1-telefone'}
+      ]
+    };
+
+    /* === Helpers === */
+    function getDateText(id){ const el=document.getElementById(id); const dt=el && el.value; if(dt){ try{ return new Date(dt+'T00:00:00').toLocaleDateString('pt-BR'); } catch{ return 'HOJE'; } } return 'HOJE'; }
+    function ticketSuffix(id){ const el=document.getElementById(id); const v = el && el.value ? el.value.trim() : ''; return v ? ` // TICKET: ${v}` : ''; }
+    function getCavaleteValue(group){ const yes=document.getElementById(`${group}-sim`); const no=document.getElementById(`${group}-nao`); if(yes&&yes.checked) return 'SIM'; if(no&&no.checked) return 'NÃO'; return null; }
+    function validateCavalete(group, showMsg=true){ const field=document.getElementById(`${group}-field`); const err=document.getElementById(`${group}-error`); const v=getCavaleteValue(group); if(!v){ if(showMsg&&err&&field){ err.hidden=false; field.classList.add('invalid'); } return false; } if(err&&field){ err.hidden=true; field.classList.remove('invalid'); } return true; }
+
+    /* === Débitos (Informação Débito) === */
+    let debRowCounter=0;
+    function createDebitRow(prefill={ref:'', val:''}){
+      const idx=++debRowCounter;
+      const row=document.createElement('div');
+      row.className='deb-row';
+      row.dataset.index=idx;
+      row.innerHTML=`
+        <div class="form-field">
+          <label class="form-label" for="deb-m2-ref-${idx}">REFERÊNCIA DE DÉBITO <span class="subtle">(MM/AAAA)</span></label>
+          <input class="form-input deb-ref" id="deb-m2-ref-${idx}" type="text" inputmode="numeric" autocomplete="off" value="${prefill.ref}">
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="deb-m2-val-${idx}">DÉBITO EM ABERTO</label>
+          <input class="form-input deb-val" id="deb-m2-val-${idx}" type="text" inputmode="numeric" autocomplete="off" value="${prefill.val}">
+        </div>
+        <div class="form-field">
+          <label class="form-label">&nbsp;</label>
+          <button class="deb-remove" type="button" aria-label="Remover débito" title="Remover débito">🗑️</button>
+        </div>`;
+      row.querySelector('.deb-ref').addEventListener('input', e=>{ e.target.value=maskMonthYear(e.target.value); refreshService('informacaoDebito'); });
+      row.querySelector('.deb-val').addEventListener('input', e=>{ e.target.value=maskBRL(e.target.value); refreshService('informacaoDebito'); });
+      row.querySelector('.deb-remove').addEventListener('click', ()=>{ row.remove(); refreshService('informacaoDebito'); ensureAtLeastOneDebitRow(); });
+      return row;
+    }
+    function ensureAtLeastOneDebitRow(){ const list=document.getElementById('deb-m2-list'); if(list&&list.children.length===0){ list.appendChild(createDebitRow()); } }
+    function initDebitRows(){ const list=document.getElementById('deb-m2-list'); if(!list) return; list.innerHTML=''; list.appendChild(createDebitRow()); const addBtn=document.getElementById('deb-add-row'); addBtn.addEventListener('click', ()=>{ list.appendChild(createDebitRow()); refreshService('informacaoDebito'); }); }
+
+    /* === Textos M2 === */
+    function renderM2InformacaoDebito(){
+      const list=document.getElementById('deb-m2-list');
+      const items=Array.from(list.querySelectorAll('.deb-row')).map(row=>{
+        const ref=row.querySelector('.deb-ref').value;
+        const val=row.querySelector('.deb-val').value;
+        return (ref||val)?`REF ${pad(ref)} ${pad(val)}`:null;
+      }).filter(Boolean);
+      const blocos=items.length?items.join(' // '):'REF ____ ____';
+      return `CLIENTE PEDIU ORIENTAÇÃO DE DÉBITOS // INFORMADO NA DATA DE HOJE EM ABERTO // ${blocos} // CLIENTE ORIENTADO${ticketSuffix('inf-m2-ticket')}`;
+    }
+    function renderM2ReligacaoBaixado(){
+      const ref=document.getElementById('rb-m2-referencia').value;
+      const val=document.getElementById('rb-m2-valor').value;
+      const dataTxt=getDateText('rb-m2-data');
+      const cav=getCavaleteValue('rb-m2-cavalete')??'____';
+      return `CLIENTE SOLICITOU RELIGAÇÃO // PAGAMENTO ${pad(ref)} ${pad(val)} - BAIXADO NA DATA DE ${dataTxt} // NÃO HÁ SOLICITAÇÕES ANTERIORES EM MENOS DE 30 DIAS // CORTE RAMAL // CIENTE DO VALOR E QUE SERÁ COBRADO NA PRÓXIMA FATURA // CIENTE DO PRAZO // CAVALETE DE FÁCIL ACESSO: ${cav}${ticketSuffix('rb-m2-ticket')}`;
+    }
+    function renderM2ReligacaoInformado(){
+      const ref=document.getElementById('ri-m2-referencia').value;
+      const val=document.getElementById('ri-m2-valor').value;
+      const dataTxt=getDateText('ri-m2-data');
+      const cav=getCavaleteValue('ri-m2-cavalete')??'____';
+      return `CLIENTE SOLICITOU RELIGAÇÃO // INFORMOU PAGAMENTO REF ${pad(ref)} ${pad(val)} - PAGO NA DATA DE ${dataTxt} // NÃO HÁ SOLICITAÇÕES ANTERIORES EM MENOS DE 30 DIAS // CORTE CAVALETE // CIENTE DO VALOR E QUE SERÁ COBRANDO NA PRÓXIMA FATURA // CIENTE DO PRAZO // CIENTE QUE CASO O PAGAMENTO NÃO SEJA BAIXADO EM ATÉ 2 DIAS ÚTEI, OCORRERÁ NOVA SUSPENSÃO DO SERVIÇO E COBRANÇA DE TAXA  // CAVALETE DE FÁCIL ACESSO: ${cav}${ticketSuffix('ri-m2-ticket')}`;
+    }
+    function renderM2Troca(){
+      return `CLIENTE DESEJA FAZER TROCA DE TITULARIDADE // INFORMADO QUE DEVE COMPARECER AO ESCRITÓRIO LOCAL MUNIDO DE DOCS PESSOAIS E DO IMÓVEL // CIENTE QUE NÃO PODE TER DÉBITOS EM ABERTO COM A SANESUL${ticketSuffix('tro-m2-ticket')}`;
+    }
+    function renderM2Prioridade(){
+      const os=document.getElementById('pri-m1-os').value;
+      const end=document.getElementById('pri-m1-endereco').value;
+      const comp=document.getElementById('pri-m1-complemento').value;
+      const loc=document.getElementById('pri-m1-localidade').value;
+      const ponto=document.getElementById('pri-m1-ponto').value;
+      const bai=document.getElementById('pri-m1-bairro').value;
+      const sol=document.getElementById('pri-m1-solicitante').value;
+      const tel=document.getElementById('pri-m1-telefone').value;
+      return `*Segue Prioridade*
+OS: ${pad(os)}
+ENDEREÇO: ${pad(end)}
+COMPLEMENTO: ${pad(comp)}
+LOCALIDADE: ${pad(loc)}
+PONTO REF: ${pad(ponto)}
+BAIRRO: ${pad(bai)}
+SOLICITANTE: ${pad(sol)}
+TELEFONE: ${pad(tel)}`;
+    }
+
+    /* === Alvos === */
+    const m1TargetMap={
+      informacaoDebito:'inf-m1-output',
+      prioridade:'pri-m1-output',
+      religacaoBaixado:'rb-m1-output',
+      religacaoInformado:'ri-m1-output',
+      troca:'tro-m1-output'
+    };
+    const m2TargetMap={
+      informacaoDebito:'inf-m2-output',
+      prioridade:'pri-m2-output',
+      religacaoBaixado:'rb-m2-output',
+      religacaoInformado:'ri-m2-output',
+      troca:'tro-m2-output'
+    };
+
+    /* === Atualização === */
+    function updateMask1Output(key){
+      const map=m1Map[key], lines=[];
+      map.forEach(({label,id})=>{
+        const el=document.getElementById(id); if(!el) return;
+        const v=el.value;
+        if(v&&v.trim()) lines.push(`${label}: ${v.trim()}`);
+      });
+      const target=document.getElementById(m1TargetMap[key]);
+      if(target) target.textContent=lines.join('\n'); // mantém, ainda que oculto
+    }
+    function updateMask2Output(key){
+      let text='';
+      if(key==='informacaoDebito') text=renderM2InformacaoDebito();
+      else if(key==='religacaoBaixado') text=renderM2ReligacaoBaixado();
+      else if(key==='religacaoInformado') text=renderM2ReligacaoInformado();
+      else if(key==='prioridade') text=renderM2Prioridade();
+      else text=renderM2Troca();
+      document.getElementById(m2TargetMap[key]).textContent=text;
+    }
+    function refreshService(key){ updateMask1Output(key); updateMask2Output(key); }
+
+    /* === Limpeza === */
+    function clearService(key){
+      const formId =
+        key==='informacaoDebito' ? 'form-informacao-debito' :
+        key==='prioridade' ? 'form-prioridade' :
+        key==='religacaoBaixado' ? 'form-religacao-baixado' :
+        key==='religacaoInformado' ? 'form-religacao-informado' :
+        'form-troca';
+      const form=document.getElementById(formId);
+      form.querySelectorAll('input').forEach(el=>{
+        if(el.type==='radio'){ el.checked=false; } else { el.value=''; }
+      });
+      if(key==='informacaoDebito'){ initDebitRows(); }
+      ['rb-m2-cavalete','ri-m2-cavalete'].forEach(g=>{
+        const field=document.getElementById(`${g}-field`); const err=document.getElementById(`${g}-error`);
+        if(field) field.classList.remove('invalid'); if(err) err.hidden=true;
+      });
+      refreshService(key);
+    }
+
+    /* === Menus A→Z (ordena e mantém seleção) === */
+    function normalizeAndSortTabs(){
+      const nav=document.getElementById('tablist');
+      const tabs=Array.from(nav.querySelectorAll('.tab-button'));
+      const selected=tabs.find(b=>b.getAttribute('aria-selected')==='true');
+      tabs.sort((a,b)=>a.textContent.localeCompare(b.textContent,'pt-BR'));
+      tabs.forEach(btn=>nav.appendChild(btn));
+      tabs.forEach(btn=>btn.setAttribute('aria-selected', btn===selected ? 'true' : 'false'));
+    }
+
+    /* === Rodapé === */
+    function setFooterMeta(){
+      document.getElementById('footer-version').textContent='v2';
+      document.getElementById('footer-updated').textContent=new Date(document.lastModified||Date.now()).toLocaleDateString('pt-BR');
+      document.getElementById('footer-year').textContent=new Date().getFullYear();
+    }
+
+    /* === Listeners === */
+    function attachMasks(){
+      ['inf-m1-cpf','rb-m1-cpf','ri-m1-cpf','tro-m1-cpf'].forEach(id=>{
+        const el=document.getElementById(id); el?.addEventListener('input',e=>{ e.target.value=maskCPF(e.target.value); });
+      });
+      // referência/valor (menus de religação)
+      document.getElementById('rb-m2-referencia').addEventListener('input',e=>{ e.target.value=maskMonthYear(e.target.value); refreshService('religacaoBaixado'); });
+      document.getElementById('rb-m2-valor').addEventListener('input',e=>{ e.target.value=maskBRL(e.target.value); refreshService('religacaoBaixado'); });
+      document.getElementById('ri-m2-referencia').addEventListener('input',e=>{ e.target.value=maskMonthYear(e.target.value); refreshService('religacaoInformado'); });
+      document.getElementById('ri-m2-valor').addEventListener('input',e=>{ e.target.value=maskBRL(e.target.value); refreshService('religacaoInformado'); });
+    }
+    function attachLiveUpdates(){
+      // INFORMAÇÃO DÉBITO
+      ['inf-m1-matricula','inf-m1-cidade','inf-m1-nome','inf-m1-telefone','inf-m1-cpf'].forEach(id=>{
+        document.getElementById(id).addEventListener('input',()=>refreshService('informacaoDebito'));
+      });
+      document.getElementById('inf-m2-ticket').addEventListener('input',()=>refreshService('informacaoDebito'));
+
+      // PRIORIDADE
+      ['pri-m1-os','pri-m1-endereco','pri-m1-complemento','pri-m1-localidade','pri-m1-ponto','pri-m1-bairro','pri-m1-solicitante','pri-m1-telefone'].forEach(id=>{
+        document.getElementById(id).addEventListener('input',()=>refreshService('prioridade'));
+      });
+
+      // REL BAIXADO
+      ['rb-m1-matricula','rb-m1-cidade','rb-m1-nome','rb-m1-telefone','rb-m1-cpf'].forEach(id=>{
+        document.getElementById(id).addEventListener('input',()=>refreshService('religacaoBaixado'));
+      });
+      ['rb-m2-data','rb-m2-banco','rb-m2-ticket'].forEach(id=>{
+        document.getElementById(id).addEventListener('input',()=>refreshService('religacaoBaixado'));
+      });
+      document.querySelectorAll('input[name="rb-m2-cavalete"]').forEach(r=>{
+        r.addEventListener('change',()=>{validateCavalete('rb-m2-cavalete',false);refreshService('religacaoBaixado');});
+      });
+
+      // REL INFORMADO
+      ['ri-m1-matricula','ri-m1-cidade','ri-m1-nome','ri-m1-telefone','ri-m1-cpf'].forEach(id=>{
+        document.getElementById(id).addEventListener('input',()=>refreshService('religacaoInformado'));
+      });
+      ['ri-m2-data','ri-m2-banco','ri-m2-ticket'].forEach(id=>{
+        document.getElementById(id).addEventListener('input',()=>refreshService('religacaoInformado'));
+      });
+      document.querySelectorAll('input[name="ri-m2-cavalete"]').forEach(r=>{
+        r.addEventListener('change',()=>{validateCavalete('ri-m2-cavalete',false);refreshService('religacaoInformado');});
+      });
+
+      // TROCA
+      ['tro-m1-matricula','tro-m1-cidade','tro-m1-nome','tro-m1-telefone','tro-m1-cpf'].forEach(id=>{
+        document.getElementById(id).addEventListener('input',()=>refreshService('troca'));
+      });
+      document.getElementById('tro-m2-ticket').addEventListener('input',()=>refreshService('troca'));
+    }
+    function attachTabs(){
+      const tabs=[
+        {tab:'tab-informacao-debito',panel:'panel-informacao-debito',key:'informacaoDebito'},
+        {tab:'tab-prioridade',panel:'panel-prioridade',key:'prioridade'},
+        {tab:'tab-religacao-baixado',panel:'panel-religacao-baixado',key:'religacaoBaixado'},
+        {tab:'tab-religacao-informado',panel:'panel-religacao-informado',key:'religacaoInformado'},
+        {tab:'tab-troca',panel:'panel-troca',key:'troca'}
+      ];
+      tabs.forEach(({tab,panel,key})=>{
+        const tabEl=document.getElementById(tab);
+        const panelEl=document.getElementById(panel);
+        tabEl.addEventListener('click',()=>{
+          tabs.forEach(({tab:t,panel:p})=>{
+            const tEl=document.getElementById(t); const pEl=document.getElementById(p);
+            const active=(t===tab);
+            tEl.setAttribute('aria-selected', active?'true':'false');
+            pEl.setAttribute('aria-hidden', active?'false':'true');
+            pEl.hidden=!active;
+          });
+          refreshService(key);
+        });
+        panelEl.hidden = panelEl.getAttribute('aria-hidden') === 'true';
+      });
+    }
+    function attachCopyButtons(){
+      // copiar saídas
+      document.querySelectorAll('button[data-copy-target]').forEach(btn=>{
+        btn.addEventListener('click',async()=>{
+          const targetId=btn.getAttribute('data-copy-target');
+          if(targetId==='rb-m2-output' && !validateCavalete('rb-m2-cavalete',true)){ document.getElementById('rb-m2-cavalete-sim').focus(); return; }
+          if(targetId==='ri-m2-output' && !validateCavalete('ri-m2-cavalete',true)){ document.getElementById('ri-m2-cavalete-sim').focus(); return; }
+          const el=document.getElementById(targetId);
+          const text=el.textContent||''; if(!text.trim()) return;
+          try{ await navigator.clipboard.writeText(text); const o=btn.textContent; btn.textContent='Copiado!'; btn.disabled=true; setTimeout(()=>{btn.textContent=o; btn.disabled=false;},1200); }
+          catch{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+        });
+      });
+      // copiar campos (chips)
+      document.querySelectorAll('[data-copy-input]').forEach(btn=>{
+        btn.addEventListener('click',async()=>{
+          const id=btn.getAttribute('data-copy-input');
+          const el=document.getElementById(id);
+          const text=(el?.value||'').trim(); if(!text) return;
+          try{ await navigator.clipboard.writeText(text); const o=btn.textContent; btn.textContent='OK'; btn.disabled=true; setTimeout(()=>{btn.textContent='Copiar'; btn.disabled=false;},900); }
+          catch{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+        });
+      });
+    }
+    function attachServiceClearButtons(){
+      document.querySelectorAll('[data-clear-key]').forEach(btn=>{
+        btn.addEventListener('click',()=> clearService(btn.getAttribute('data-clear-key')));
+      });
+    }
+
+    function init(){
+      normalizeAndSortTabs();
+      initDebitRows();
+      attachMasks();
+      attachLiveUpdates();
+      attachTabs();
+      attachCopyButtons();
+      attachServiceClearButtons();
+      setFooterMeta();
+      ['informacaoDebito','prioridade','religacaoBaixado','religacaoInformado','troca'].forEach(refreshService);
+    }
+    document.addEventListener('DOMContentLoaded',init);
+  </script>
+</body>
+</html>
