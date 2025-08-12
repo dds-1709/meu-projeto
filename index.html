@@ -640,7 +640,7 @@
       const val=document.getElementById('ri-m2-valor').value;
       const dataTxt=getDateText('ri-m2-data');
       const cav=getCavaleteValue('ri-m2-cavalete')??'____';
-      return `CLIENTE SOLICITOU RELIGAÇÃO // INFORMOU PAGAMENTO REF ${pad(ref)} ${pad(val)} - PAGO NA DATA DE ${dataTxt} // NÃO HÁ SOLICITAÇÕES ANTERIORES EM MENOS DE 30 DIAS // CORTE CAVALETE // CIENTE DO VALOR E QUE SERÁ COBRANDO NA PRÓXIMA FATURA // CIENTE DO PRAZO // CIENTE QUE CASO O PAGAMENTO NÃO SEJA BAIXADO EM ATÉ 2 DIAS ÚTEI, OCORRERÁ NOVA SUSPENSÃO DO SERVIÇO E COBRANÇA DE TAXA  // CAVALETE DE FÁCIL ACESSO: ${cav}${ticketSuffix('ri-m2-ticket')}`;
+      return `CLIENTE SOLICITOU RELIGAÇÃO // INFORMOU PAGAMENTO REF ${pad(ref)} ${pad(val)} - PAGO NA DATA DE ${dataTxt} // NÃO HÁ SOLICITAÇÕES ANTERIORES EM MENOS DE 30 DIAS // CORTE CAVALETE // CIENTE DO VALOR E QUE SERÁ COBRADO NA PRÓXIMA FATURA // CIENTE DO PRAZO // CIENTE QUE CASO O PAGAMENTO NÃO SEJA BAIXADO EM ATÉ 2 DIAS ÚTEIS, OCORRERÁ NOVA SUSPENSÃO DO SERVIÇO E COBRANÇA DE TAXA  // CAVALETE DE FÁCIL ACESSO: ${cav}${ticketSuffix('ri-m2-ticket')}`;
     }
     function renderM2Troca(){
       return `CLIENTE DESEJA FAZER TROCA DE TITULARIDADE // INFORMADO QUE DEVE COMPARECER AO ESCRITÓRIO LOCAL MUNIDO DE DOCS PESSOAIS E DO IMÓVEL // CIENTE QUE NÃO PODE TER DÉBITOS EM ABERTO COM A SANESUL${ticketSuffix('tro-m2-ticket')}`;
@@ -699,7 +699,8 @@ TELEFONE: ${pad(tel)}`;
       else if(key==='religacaoInformado') text=renderM2ReligacaoInformado();
       else if(key==='prioridade') text=renderM2Prioridade();
       else text=renderM2Troca();
-      document.getElementById(m2TargetMap[key]).textContent=text;
+      const target=document.getElementById(m2TargetMap[key]);
+      if(target) target.textContent=text;
     }
     function refreshService(key){ updateMask1Output(key); updateMask2Output(key); }
 
